@@ -1,0 +1,15 @@
+E:\repos\PDF_processor_test\PDF_processor_test\bin\Debug\net6.0\PDF_processor_test.exe
+E:\repos\PDF_processor_test\PDF_processor_test\bin\Debug\net6.0\PDF_processor_test.deps.json
+E:\repos\PDF_processor_test\PDF_processor_test\bin\Debug\net6.0\PDF_processor_test.runtimeconfig.json
+E:\repos\PDF_processor_test\PDF_processor_test\bin\Debug\net6.0\PDF_processor_test.dll
+E:\repos\PDF_processor_test\PDF_processor_test\bin\Debug\net6.0\PDF_processor_test.pdb
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\PDF_processor_test.csproj.AssemblyReference.cache
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\PDF_processor_test.GeneratedMSBuildEditorConfig.editorconfig
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\PDF_processor_test.AssemblyInfoInputs.cache
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\PDF_processor_test.AssemblyInfo.cs
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\PDF_processor_test.csproj.CoreCompileInputs.cache
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\PDF_processor_test.dll
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\refint\PDF_processor_test.dll
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\PDF_processor_test.pdb
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\PDF_processor_test.genruntimeconfig.cache
+E:\repos\PDF_processor_test\PDF_processor_test\obj\Debug\net6.0\ref\PDF_processor_test.dll
