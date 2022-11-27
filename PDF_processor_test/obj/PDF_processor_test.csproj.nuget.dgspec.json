@@ -40,9 +40,9 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
-            "iTextSharp.LGPLv2.Core": {
+            "itextsharp.netstandard": {
               "target": "Package",
-              "version": "[1.9.3, )"
+              "version": "[5.5.13.2, )"
             }
           },
           "imports": [
