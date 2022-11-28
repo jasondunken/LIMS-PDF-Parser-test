@@ -1,96 +1,118 @@
 ﻿using iTextSharp.text.pdf;
 using iTextSharp.text.pdf.parser;
-using System.Text;
 
+ACESD_Fecal_Coliform.Execute("./test_files/FecalColif.pdf");
 
-var testFile = "./test_files/FecalColif.pdf";
-var tableHeaderRowStart = "PARAMETER";
-var tableDataRowStart = "Fecal";
-var pdfParserOutput = "";
-try
+public class ACESD_Fecal_Coliform
 {
-    PdfReader reader = new PdfReader("./test_files/FecalColif.pdf");
-    for (var i = 2; i < reader.NumberOfPages; i++)
+    public static void Execute(string filePath)
     {
-        var ex = PdfTextExtractor.GetTextFromPage(reader, i, new LocationTextExtractionStrategy());
-        pdfParserOutput += "\n" + ex;
+        string tableHeaderRowStart = "PARAMETER";
+        string tableDataRowStart = "Fecal";
 
+        string[] parameters = new string[] {
+            "Sample Description",
+            "Sample Number",
+            "Sample Date / Time",
+            "Sample Type",
+            "PARAMETER",
+            "RESULTS",
+            "UNITS",
+            "METHOD"
+        };
 
-        string encodingTest = Encoding.UTF8.GetString(reader.GetPageContent(i));
-        string[] splitEncodingTest = encodingTest.Split("\n");
-        foreach(string line in splitEncodingTest)
+        // the header is read in in this order from the PDF
+        // PARAMETER RESULTS LIMIT UNITS METHOD ANALYZED ANALYST
+        // the data row is read in in this order from the PDF 
+        // |Fecal Coliform (MF)||KAW||4/22/2021||SM9222D 19-21ed||CFU/100 ml||1||50||16:02|
+        // the last element is discarded
+
+        // this is the index of the corresponding value
+        int[] pdfPropertyHeaderIndex = new int[] { 0, 6, 5, 4, 3, 2, 1 };
+
+        List<string> extractedResults = new List<string>();
+        List<string> extractedDataRows = new List<string>();
+
+        PdfReader? reader = null;
+
+        // read in input file
+        try
         {
-            if (line.Contains("Tj"))
-            {
-                Console.WriteLine("encoding test: " + line);
-            }
+            reader = new PdfReader(filePath);
+        }
+        catch (Exception ex)
+        {
+            Console.Write("Failed to read input file! " + ex.Message);
         }
 
-        var lineText = LineUsingCoordinates.getLineText(testFile, i, null);
-        
-        foreach (var row in lineText)
+        // parse PDF pages
+        if (reader != null)
         {
-            if (row.Count > 1 && row[0].Contains(tableDataRowStart))
+            try
             {
-                for (var col = 0; col < row.Count; col++)
+                // pages are numberd 1 -> n
+                int pagesRead = 0;
+                for (var i = 0; i < reader.NumberOfPages; i++)
                 {
-                    string trimmedValue = row[col].Trim();
-                    if (trimmedValue != "")
+                    var ex = PdfTextExtractor.GetTextFromPage(reader, i + 1);
+                    var splitOutput = ex.Split("\n");
+                    var prevLine = "";
+                    foreach (string line in splitOutput)
                     {
-                        Console.Write("|" + trimmedValue + "|");
+                        foreach (string param in parameters)
+                        {
+                            if (line.StartsWith(param))
+                            {
+                                extractedResults.Add(line);
+                            }
+                        }
+                        if (prevLine.StartsWith(tableHeaderRowStart))
+                        {
+                            extractedResults.Add(line);
+                        }
+                        prevLine = line;
                     }
+
+                    var lineText = LineUsingCoordinates.getLineText(filePath, i + 1);
+                    foreach (var row in lineText)
+                    {
+                        if (row.Count > 1 && row[0].Contains(tableDataRowStart))
+                        {
+                            string dataRow = "";
+                            for (var col = 0; col < row.Count; col++)
+                            {
+                                string trimmedValue = row[col].Trim();
+                                if (trimmedValue != "")
+                                {
+                                    dataRow += "|" + trimmedValue + "|";
+                                }
+                            }
+                            extractedDataRows.Add(dataRow);
+                        }
+                    }
+                    pagesRead++;
                 }
-                Console.WriteLine("");
+                Console.WriteLine("Total pages read: " + pagesRead);
             }
-        }
-    }
-} 
-catch(Exception ex)
-{
-    Console.Write(ex.Message);
-}
-
-String[] parameters = new string[] { 
-    "Sample Description",
-    "Sample Number",
-    "Sample Results",
-    "Sample Date / Time",
-    "Units",
-    "Sample Type",
-    "PARAMETER",
-    "METHOD"
-};
-
-List<string> extractedResults = new List<string>();
-
-if (pdfParserOutput.Length > 0)
-{
-    var splitOutput = pdfParserOutput.Split("\n");
-    var prevLine = "";
-    foreach (string line in splitOutput)
-    {
-        foreach (string param in parameters)
-        {
-            if (line.StartsWith(param))
+            catch (Exception ex)
             {
-                extractedResults.Add(line);
+                Console.Write(ex.Message);
             }
         }
-        if (prevLine.StartsWith(tableHeaderRowStart))
-        {
-            extractedResults.Add(line);
-        }
-        prevLine = line;
-    }
-}
-else
-{
-    Console.WriteLine("empty document");
-}
 
-foreach(string line in extractedResults)
-{
-    Console.WriteLine(line);
+
+        // reshape lists; 
+        foreach (string line in extractedDataRows)
+        {
+            Console.WriteLine(line);
+        }
+        foreach (string line in extractedResults)
+        {
+            Console.WriteLine(line);
+        }
+    }
+
+    
 }
 
 // below classes are used to extract table type data | used here to get the data row only
@@ -132,7 +154,7 @@ public class RectAndText
 }
 class LineUsingCoordinates
 {
-    public static List<List<string>> getLineText(string path, int page, float[] coord)
+    public static List<List<string>> getLineText(string path, int page)
     {
         //Create an instance of our strategy
         var t = new MyLocationTextExtractionStrategy();
@@ -140,12 +162,6 @@ class LineUsingCoordinates
         //Parse page 1 of the document above
         using (var r = new PdfReader(path))
         {
-            for (var i = 0; i < r.NumberOfPages; i++)
-            {
-                //var ex = iTextSharp.text.pdf.parser.PdfTextExtractor.GetTextFromPage(r, 2, t);
-            }
-            // Calling this function adds all the chunks with their coordinates to the 
-            // 'myPoints' variable of 'MyLocationTextExtractionStrategy' Class
             var ex = iTextSharp.text.pdf.parser.PdfTextExtractor.GetTextFromPage(r, page, t);
         }
         // List of columns in one line
@@ -166,36 +182,14 @@ class LineUsingCoordinates
         {
             // If the coords passed to the function is not null then process the part in the 
             // given coords of the page otherwise process the whole page
-            if (coord != null)
+            float bottom = i.Rect.Bottom;
+            if (bottomPointList.Count == 0)
             {
-                if (i.Rect.Left >= coord[0] &&
-                    i.Rect.Bottom >= coord[1] &&
-                    i.Rect.Right <= coord[2] &&
-                    i.Rect.Top <= coord[3])
-                {
-                    float bottom = i.Rect.Bottom;
-                    if (bottomPointList.Count == 0)
-                    {
-                        bottomPointList.Add(bottom);
-                    }
-                    else if (Math.Abs(bottomPointList.Last() - bottom) > 3)
-                    {
-                        bottomPointList.Add(bottom);
-                    }
-                }
+                bottomPointList.Add(bottom);
             }
-            // else process the whole page
-            else
+            else if (Math.Abs(bottomPointList.Last() - bottom) > 3)
             {
-                float bottom = i.Rect.Bottom;
-                if (bottomPointList.Count == 0)
-                {
-                    bottomPointList.Add(bottom);
-                }
-                else if (Math.Abs(bottomPointList.Last() - bottom) > 3)
-                {
-                    bottomPointList.Add(bottom);
-                }
+                bottomPointList.Add(bottom);
             }
         }
 
@@ -264,7 +258,6 @@ class LineUsingCoordinates
             // Here we are adding the chunkList related to each line
             lineChunksList.Add(chunksList);
         }
-        bool sameLine = false;
 
         //Here we are looping through the lines consisting the chunks related to each line 
         foreach (var linechunk in lineChunksList)
@@ -323,7 +316,6 @@ class LineUsingCoordinates
             lineText.Add(tempWord);
             lineWord.Clear();
         }
-
         return lineText;
     }
 }
