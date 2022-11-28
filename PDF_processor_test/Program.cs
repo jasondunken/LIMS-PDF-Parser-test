@@ -7,14 +7,18 @@ public class ACESD_Fecal_Coliform
 {
     public static void Execute(string filePath)
     {
+        PdfReader? reader = null;
+
         string tableHeaderRowStart = "PARAMETER";
         string tableDataRowStart = "Fecal";
 
+        // parameters to be mapped
+        // order is important!
         string[] parameters = new string[] {
-            "Sample Description",
             "Sample Number",
-            "Sample Date / Time",
+            "Sample Description",
             "Sample Type",
+            "Sample Date / Time",
             "PARAMETER",
             "RESULTS",
             "UNITS",
@@ -27,13 +31,14 @@ public class ACESD_Fecal_Coliform
         // |Fecal Coliform (MF)||KAW||4/22/2021||SM9222D 19-21ed||CFU/100 ml||1||50||16:02|
         // the last element is discarded
 
-        // this is the index of the corresponding value
-        int[] pdfPropertyHeaderIndex = new int[] { 0, 6, 5, 4, 3, 2, 1 };
+        // this is the index of the corresponding value in relation to the header
+        int[] pdfDataRowPropertyIndex = new int[] { 0, 6, 5, 4, 3, 2, 1 };
 
-        List<string> extractedResults = new List<string>();
         List<string> extractedDataRows = new List<string>();
 
-        PdfReader? reader = null;
+        string dataTableHeader = "";
+
+        Dictionary<string, Dictionary<string, string>> outputData = new Dictionary<string, Dictionary<string, string>>();
 
         // read in input file
         try
@@ -54,25 +59,47 @@ public class ACESD_Fecal_Coliform
                 int pagesRead = 0;
                 for (var i = 0; i < reader.NumberOfPages; i++)
                 {
-                    var ex = PdfTextExtractor.GetTextFromPage(reader, i + 1);
-                    var splitOutput = ex.Split("\n");
-                    var prevLine = "";
-                    foreach (string line in splitOutput)
+                    // get the body of the PDF
+                    // this returns everything useable EXCEPT for the table data row,
+                    // which has too many spaces to efficiently split
+                    string pdfBody = PdfTextExtractor.GetTextFromPage(reader, i + 1);
+                    string[] pdfLines = pdfBody.Split("\n");
+                    string currentSample = "";
+                    foreach (string line in pdfLines)
                     {
+                        // line with "Sample Number" indicates a new record
+                        if (line.StartsWith(parameters[0]))
+                        {
+                            string sampleNumber = line.Split(":")[1];
+                            currentSample = sampleNumber;
+                            outputData.Add(sampleNumber, new Dictionary<string, string>());
+                        }
                         foreach (string param in parameters)
                         {
                             if (line.StartsWith(param))
                             {
-                                extractedResults.Add(line);
+                                if (line.StartsWith(tableHeaderRowStart))
+                                {
+                                    dataTableHeader = line;
+                                } 
+                                else
+                                {
+                                    string[] sampleValue = line.Split(":");
+                                    if (sampleValue.Length == 2)
+                                    {
+                                        outputData[currentSample].Add(sampleValue[0], sampleValue[1]);
+                                    }
+                                    // the split splits the seconds off of the time so add them back on
+                                    else if (sampleValue.Length == 3)
+                                    {
+                                        outputData[currentSample].Add(sampleValue[0], sampleValue[1] + ":" + sampleValue[2]);
+                                    }
+                                }
                             }
                         }
-                        if (prevLine.StartsWith(tableHeaderRowStart))
-                        {
-                            extractedResults.Add(line);
-                        }
-                        prevLine = line;
                     }
 
+                    // extract the table data row in a useable form
                     var lineText = LineUsingCoordinates.getLineText(filePath, i + 1);
                     foreach (var row in lineText)
                     {
@@ -100,22 +127,26 @@ public class ACESD_Fecal_Coliform
             }
         }
 
-
-        // reshape lists; 
-        foreach (string line in extractedDataRows)
+        // add the table data row to the dict
+        string[] headerFields = dataTableHeader.Split(" ");
+        for (int i = 0; i < extractedDataRows.Count; i++)
         {
-            Console.WriteLine(line);
+            string line = extractedDataRows[i];
+            line = line.TrimStart('|');
+            line = line.TrimEnd('|');
+            string[] fieldValues = line.Split("||");
+            for (int j = 0; j < headerFields.Length; j++)
+            {
+                outputData[outputData.ElementAt(i).Key].Add(headerFields[j], fieldValues[pdfDataRowPropertyIndex[j]]);
+            }
         }
-        foreach (string line in extractedResults)
-        {
-            Console.WriteLine(line);
-        }
+        Console.WriteLine("here for a breakpoint");
     }
 
     
 }
 
-// below classes are used to extract table type data | used here to get the data row only
+// below classes are used to extract table type data | used here to get the table's data row only
 public class MyLocationTextExtractionStrategy : LocationTextExtractionStrategy
 {
     public List<RectAndText> myPoints = new List<RectAndText>();
