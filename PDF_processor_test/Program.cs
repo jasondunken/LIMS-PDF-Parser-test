@@ -7,7 +7,9 @@ public class ACESD_Fecal_Coliform
 {
     public static void Execute(string filePath)
     {
+		#nullable enable
         PdfReader? reader = null;
+		#nullable disable
 
         string tableHeaderRowStart = "PARAMETER";
         string tableDataRowStart = "Fecal";
