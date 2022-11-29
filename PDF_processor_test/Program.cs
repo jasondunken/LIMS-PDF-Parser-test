@@ -145,6 +145,32 @@ public class ACESD_Fecal_Coliform
         Console.WriteLine("here for a breakpoint");
     }
 
+	// for conversion from miltime to 12/12 time
+	// and to remove "@" symbol between date and time
+	private string FormatDate(string dateString)
+	{
+		// assuming that the incoming time in military 0-23
+		string[] splitDate = dateString.Split("@");
+		string date = splitDate[0].Trim();
+		string time = splitDate[1].Trim();
+		string[] hoursMinutes = time.Split(":");
+		int hour = int.Parse(hoursMinutes[0]);
+		string meridiem = "AM";
+		if (hour > 11)
+		{
+			meridiem = "PM";
+		}
+		if (hour == 0)
+		{
+			hour = 12;
+		}
+		if (hour > 12)
+		{
+			hour -= 12;
+		}
+
+		return string.Format("{0} {1}:{2} {3}", date, hour, hoursMinutes[1], meridiem);
+        }
     
 }
 
